@@ -1,1 +1,59 @@
+from google.colab import files
+uploaded = files.upload()import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+import matplotlib.pyplot as plt
+filename = next(iter(uploaded))  # gets the uploaded filename
+data = pd.read_csv(filename)
+
+# Fill missing values
+data['Age'].fillna(data['Age'].median(), inplace=True)
+data['Embarked'].fillna(data['Embarked'].mode()[0], inplace=True)
+
+# Convert categorical columns to numeric
+le_sex = LabelEncoder()
+data['Sex'] = le_sex.fit_transform(data['Sex'])
+le_embarked = LabelEncoder()
+data['Embarked'] = le_embarked.fit_transform(data['Embarked'])
+
+# Optional: Create a 'FamilySize' feature
+data['FamilySize'] = data['SibSp'] + data['Parch'] + 1
+
+# Features and target
+features = ['Pclass', 'Sex', 'Age', 'Fare', 'Embarked', 'FamilySize']
+X = data[features]
+y = data['Survived']
+
+# Split into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train a Random Forest Classifier
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Predict on test set
+y_pred = model.predict(X_test)
+
+# Evaluate
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
+
+# Feature Importance
+importances = model.feature_importances_
+feature_importance_df = pd.DataFrame({
+    'Feature': features,
+    'Importance': importances
+}).sort_values(by='Importance', ascending=False)
+
+print("\nFeature Importances:\n", feature_importance_df)
+
+# Plot Feature Importance
+plt.figure(figsize=(8, 5))
+plt.barh(feature_importance_df['Feature'], feature_importance_df['Importance'])
+plt.xlabel('Importance')
+plt.title('Feature Importance for Titanic Survival')
+plt.gca().invert_yaxis()
+plt.show()
 
